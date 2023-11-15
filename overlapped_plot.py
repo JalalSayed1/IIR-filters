@@ -20,19 +20,23 @@ class RealtimePlotWindow:
         # create a plot window
         self.fig, self.ax = plt.subplots()
         # that's our plotbuffer
+        #* to be plotted:
         self.plotbuffer0 = np.zeros(500)
         self.plotbuffer1 = np.zeros(500)
+        self.sw_value = np.zeros(500)
         # create empty lines for each channel
-        self.line0, = self.ax.plot(self.plotbuffer0, label='Analog Pin 0')
-        self.line1, = self.ax.plot(self.plotbuffer1, label='Analog Pin 1')
+        self.line0, = self.ax.plot(self.plotbuffer0, label='X axis')
+        self.line1, = self.ax.plot(self.plotbuffer1, label='Y axis')
+        self.line_sw, = self.ax.plot(self.sw_value, label='Switch')
         # axis
-        self.ax.set_ylim(0, 1.5)
+        self.ax.set_ylim(-0.5, 1.5)
         # That's our ringbuffer which accumulates the samples
         # It's emptied every time when the plot window below
         # does a repaint
         self.ringbuffer0 = []
         self.ringbuffer1 = []
-        # add any initialization code here (filters etc)
+        self.ringbuffer_sw = []
+        #! add any initialization code here (filters etc)
         # start the animation
         self.ani = animation.FuncAnimation(self.fig, self.update, interval=100)
         # add a legend to the plot

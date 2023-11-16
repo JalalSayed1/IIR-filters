@@ -69,7 +69,7 @@ class RealtimePlotWindow:
 realtimePlotWindow = RealtimePlotWindow()
 
 # sampling rate: 100Hz
-samplingRate = 100
+samplingRate = 500
 
 # called for every new sample which has arrived from the Arduino
 def callBack(pin, value):
@@ -84,11 +84,11 @@ board.samplingOn(1000 / samplingRate)
 
 # Register the callback which adds the data to the animated plot
 board.analog[0].register_callback(lambda value, pin=0: callBack(pin, value))
-board.analog[1].register_callback(lambda value, pin=1: callBack(pin, value))
+# board.analog[1].register_callback(lambda value, pin=1: callBack(pin, value))
 
 # Enable the callbacks
 board.analog[0].enable_reporting()
-board.analog[1].enable_reporting()
+# board.analog[1].enable_reporting()
 
 # show the plot and start the animation
 plt.show()

@@ -78,12 +78,13 @@ class RealtimePlotWindow:
             self.ringbuffer1.append(v)
 
 # Sampling rate: 100Hz
-samplingRate = 100
+samplingRate = 500
 
 # Create an instance of the animated scrolling window
 realtimePlotWindow = RealtimePlotWindow()
 
 def callBack(pin, value):
+    realtimePlotWindow.print_values(pin, value)
     # Callback for new samples from the Arduino
     realtimePlotWindow.addData(value, pin)
 
@@ -93,16 +94,28 @@ board = Arduino(PORT)
 # Set the sampling rate in the Arduino
 board.samplingOn(1000 / samplingRate)
 
+#' pin assignments:
+x_axis_pin = 0 # A0
+y_axis_pin = 1 # A1
+sw_pin = 7 # D7
+# pwm_pin = 6 # D6
+
 # Register callbacks for both analog pins
-board.analog[0].register_callback(lambda value, pin=0: callBack(pin, value))
-board.analog[0].enable_reporting()
-board.analog[1].register_callback(lambda value, pin=1: callBack(pin, value))
-board.analog[1].enable_reporting()
+board.analog[x_axis_pin].register_callback(lambda value, pin=x_axis_pin: callBack(pin, value))
+board.analog[x_axis_pin].enable_reporting()
+board.analog[y_axis_pin].register_callback(lambda value, pin=y_axis_pin: callBack(pin, value))
+board.analog[y_axis_pin].enable_reporting()
+
+# pwm signal from digital pin 8:
+# pwm = board.get_pin(f'd:{pwm_pin}:p')
+
+
 
 # Show the plot and start the animation
 plt.show()
 
+# pwm.write(0)
 # Close the serial port
 board.exit()
 
-print("finished")
+print("Finished 👍")

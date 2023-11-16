@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 from pyfirmata2 import Arduino
 import time
 import matplotlib.pyplot as plt
@@ -9,145 +7,117 @@ import numpy as np
 PORT = Arduino.AUTODETECT
 # PORT = '/dev/ttyACM0'
 
-class LEDController:
+'''
+
+'''
+class RGB_LED_Controller:
 
     def __init__(self):
-        # sampling rate: 10Hz
-        self.samplingRate = 10
-        self.board = Arduino(PORT)
-        self.x_axis = [0]
-        self.y_axis = [0]
-        self.switch = [0]
-        self.x_axis_pin, self.y_axis_pin, self.sw_pin = self.setup()
+        # Create a plot window for time domain
+        self.fig_time, self.ax_time = plt.subplots()
+        self.fig_time.suptitle('Time Domain')
+        # Plot buffers for channels 0 and 1
+        self.plotbuffer0 = np.zeros(500)
+        self.plotbuffer1 = np.zeros(500)
+        # Create empty lines for each channel
+        self.line0, = self.ax_time.plot(self.plotbuffer0, label='Analog 0')
+        self.line1, = self.ax_time.plot(self.plotbuffer1, label='Analog 1')
+        # Axis settings
+        self.ax_time.set_ylim(-0.5, 1.5)
+        self.ax_time.legend()
 
-        self.setup_plotting()
-        
-        #! add any initialization code here (filters etc)?
-        
-        
+        # Create a plot window for frequency domain
+        self.fig_freq, self.ax_freq = plt.subplots()
+        self.fig_freq.suptitle('Frequency Domain')
+        self.line_freq0, = self.ax_freq.plot([], [], label='Frequency Spectrum - A0')
+        self.line_freq1, = self.ax_freq.plot([], [], label='Frequency Spectrum - A1')
+        self.ax_freq.set_xlabel('Frequency (Hz)')
+        self.ax_freq.set_ylabel('Amplitude')
+        self.ax_freq.legend()
 
-        
-        
+        # Ringbuffers for accumulating samples
+        self.ringbuffer0 = []
+        self.ringbuffer1 = []
 
-    '''
-    No need to call this function. It is called automatically when the object is created. 
-    '''
-    def setup(self):
-        # x axis:
-        self.board.samplingOn(1000 / self.samplingRate)
-        x_axis_pin = self.board.get_pin('a:0:i')
-        x_axis_pin.enable_reporting()
-        x_axis_pin.register_callback(lambda value, pin=0: self.add_new_data(value, pin))
-        # y axis:
-        y_axis_pin = self.board.get_pin('a:1:i')
-        y_axis_pin.enable_reporting()
-        y_axis_pin.register_callback(lambda value, pin=1: self.add_new_data(value, pin))
-        # switch:
-        sw_pin = self.board.get_pin('d:7:i')
-        sw_pin.enable_reporting()
-        sw_pin.register_callback(lambda value, pin=7: self.add_new_data(value, pin))
-        
-        return x_axis_pin, y_axis_pin, sw_pin
-    
-    
-    def setup_plotting(self):
-        # plotting window:
-        self.fig, self.ax = plt.subplots()
-        # buffers for data:
-        self.plot_buffer_x_axis = np.zeros(500)
-        self.plot_buffer_y_axis = np.zeros(500)
-        self.plot_buffer_sw = np.zeros(500)
-        # create empty lines:
-        self.line_x_axis, = self.ax.plot(self.plot_buffer_x_axis, label='X axis')
-        self.line_y_axis, = self.ax.plot(self.plot_buffer_y_axis, label='Y axis')
-        self.line_sw, = self.ax.plot(self.plot_buffer_sw, label='Switch')
-        
-        self.ax.set_ylim(-0.5, 1.5)
-        
-        # ring buffers to accumulate samples. It's emptied every time when the plot window below does a repaint:
-        self.ring_buffer_x_axis = []
-        self.ring_buffer_y_axis = []
-        self.ring_buffer_sw = []
-        
-        #! add any initialization code here (filters etc)
-        
-        # start the animation
-        self.ani = animation.FuncAnimation(self.fig, self.update_plot, interval=100)
-        
-        self.ax.legend()
-        #! might need to change this:
-        # plt.show()
-        
-    
-    def read_sensor_data(self):
-        # append latest data from the sensor:
-        self.x_axis.append(self.x_axis_pin.read())
-        self.y_axis.append(self.y_axis_pin.read())
-        self.switch.append(self.sw_pin.read())
-        
-        return self.x_axis, self.y_axis, self.switch
-        
-    def read_and_print(self):
-        self.read_sensor_data()
-        # print latest data from the sensor only:
-        print(f"x_axis: {self.x_axis[-1]}, y_axis: {self.y_axis[-1]}, switch: {self.switch[-1]}")
-        # self.update_plot()
-        
-    
-    def update_plot(self, frame):
-        # append values to buffers:
-        # same args to append to itself.
-        self.plot_buffer_x_axis = np.append(self.plot_buffer_x_axis, self.ring_buffer_x_axis)
-        self.plot_buffer_y_axis = np.append(self.plot_buffer_y_axis, self.ring_buffer_y_axis)
-        self.plot_buffer_sw = np.append(self.plot_buffer_sw, self.ring_buffer_sw)
-        # only keep the 500 newest ones and discard the old ones:
-        self.plot_buffer_x_axis = self.plot_buffer_x_axis[-500:]
-        self.plot_buffer_y_axis = self.plot_buffer_y_axis[-500:]
-        self.plot_buffer_sw = self.plot_buffer_sw[-500:]
-        
-        # empty ring buffers:
-        self.ring_buffer_x_axis = []
-        self.ring_buffer_y_axis = []
-        self.ring_buffer_sw = []
-        
-        # set the new 500 points of the channels:
-        self.line_x_axis.set_ydata(self.plot_buffer_x_axis)
-        self.line_y_axis.set_ydata(self.plot_buffer_y_axis)
-        self.line_sw.set_ydata(self.plot_buffer_sw)
-        
-        return self.line_x_axis, self.line_y_axis, self.line_sw
-        
-        
-    def add_new_data(self, v, pin):
+        # Start the animation
+        self.ani_time = animation.FuncAnimation(self.fig_time, self.update_time, interval=100)
+        self.ani_freq = animation.FuncAnimation(self.fig_freq, self.update_freq, interval=100)
+
+    def update_time(self, data):
+        # Add new data to the buffers and update plots
+        self.plotbuffer0 = np.append(self.plotbuffer0, self.ringbuffer0)[-500:]
+        self.plotbuffer1 = np.append(self.plotbuffer1, self.ringbuffer1)[-500:]
+        self.ringbuffer0 = []
+        self.ringbuffer1 = []
+        self.line0.set_ydata(self.plotbuffer0)
+        self.line1.set_ydata(self.plotbuffer1)
+        return self.line0, self.line1
+
+    def update_freq(self, data):
+        # Update frequency domain plot for both channels
+        fft_vals0 = np.fft.fft(self.plotbuffer0)
+        fft_vals1 = np.fft.fft(self.plotbuffer1)
+        fft_freq = np.fft.fftfreq(len(fft_vals0), 1 / samplingRate)
+        mask = fft_freq > 0
+
+        self.line_freq0.set_data(fft_freq[mask], np.abs(fft_vals0[mask]))
+        self.line_freq1.set_data(fft_freq[mask], np.abs(fft_vals1[mask]))
+        self.ax_freq.set_xlim(0, samplingRate / 2)
+        max_amplitude = max(max(np.abs(fft_vals0[mask])), max(np.abs(fft_vals1[mask]))) + 10
+        self.ax_freq.set_ylim(0, max_amplitude)
+
+        return self.line_freq0, self.line_freq1
+
+    def addData(self, v, pin):
+        # Append data to the appropriate ringbuffer
         if pin == 0:
-            self.ring_buffer_x_axis.append(v)
+            self.ringbuffer0.append(v)
         elif pin == 1:
-            self.ring_buffer_y_axis.append(v)
-        elif pin == 7:
-            self.ring_buffer_sw.append(v)
-
-    def stop(self):
-        self.board.samplingOff()
-        self.board.exit()
-        # if self.ani:
-        #     plt.close(self.fig)
+            self.ringbuffer1.append(v)
+            
+    def print_values(self, pin, value):
+        print(f"pin: {pin} \t value: {value}")
 
 
-print("Starting...")
+# Sampling rate: 500Hz
+samplingRate = 500
 
-LED_controller = LEDController()
-# LED_controller.start_plotting()
+# Create an instance of the animated scrolling window
+rgb_led_controller = RGB_LED_Controller()
 
-# input("Start?")
-try:
-    while True:
-        LED_controller.read_and_print()
-        # plt.show()
-        time.sleep(0.3)
-        # plt.pause(0.1)
-        
-except KeyboardInterrupt:
-    LED_controller.stop()
-    print("Finished 👍")
+def callBack(pin, value):
+    rgb_led_controller.print_values(pin, value)
+    # Callback for new samples from the Arduino
+    rgb_led_controller.addData(value, pin)
 
+# Get the Arduino board
+board = Arduino(PORT)
+
+# Set the sampling rate in the Arduino
+board.samplingOn(1000 / samplingRate)
+
+#' pin assignments:
+x_axis_pin = 0 # A0
+y_axis_pin = 1 # A1
+sw_pin = 7 # D7
+# pwm_pin = 6 # D6
+
+# Register callbacks for both analog pins
+board.analog[x_axis_pin].register_callback(lambda value, pin=x_axis_pin: callBack(pin, value))
+board.analog[x_axis_pin].enable_reporting()
+board.analog[y_axis_pin].register_callback(lambda value, pin=y_axis_pin: callBack(pin, value))
+board.analog[y_axis_pin].enable_reporting()
+
+# pwm signal from digital pin 8:
+# pwm = board.get_pin(f'd:{pwm_pin}:p')
+
+
+
+# Show the plot and start the animation
 plt.show()
+
+# pwm.write(0)
+# Close the serial port
+board.exit()
+
+print("Finished 👍")

@@ -7,9 +7,7 @@ import numpy as np
 PORT = Arduino.AUTODETECT
 # PORT = '/dev/ttyACM0'
 
-'''
 
-'''
 class RGB_LED_Controller:
 
     def __init__(self):
@@ -89,6 +87,7 @@ def callBack(pin, value):
     rgb_led_controller.print_values(pin, value)
     # Callback for new samples from the Arduino
     rgb_led_controller.addData(value, pin)
+    pwm.write(value)
 
 # Get the Arduino board
 board = Arduino(PORT)
@@ -100,7 +99,7 @@ board.samplingOn(1000 / samplingRate)
 x_axis_pin = 0 # A0
 y_axis_pin = 1 # A1
 sw_pin = 7 # D7
-# pwm_pin = 6 # D6
+pwm_pin = 6 # D6
 
 # Register callbacks for both analog pins
 board.analog[x_axis_pin].register_callback(lambda value, pin=x_axis_pin: callBack(pin, value))
@@ -109,8 +108,7 @@ board.analog[y_axis_pin].register_callback(lambda value, pin=y_axis_pin: callBac
 board.analog[y_axis_pin].enable_reporting()
 
 # pwm signal from digital pin 8:
-# pwm = board.get_pin(f'd:{pwm_pin}:p')
-
+pwm = board.get_pin(f'd:{pwm_pin}:p')
 
 
 # Show the plot and start the animation

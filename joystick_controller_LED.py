@@ -89,13 +89,13 @@ class RGB_LED_Controller:
     def print_values(self, pin, value):
         print(f"pin: {pin} \t value: {value}")
         
-    def write_pwm(self, pwm, value):
+    # def write_pwm(self, pwm, value):
         # get angle form value:
         # angle = int(value * 180)
         # write angle to servo:
         # pwm.write(angle)
         
-        pwm.write(value)
+        # pwm.write(value)
 
 
 samplingRate = 200
@@ -113,11 +113,11 @@ board.samplingOn(1000 / samplingRate)
 x_axis_pin = 0 # A0
 y_axis_pin = 1 # A1
 sw_pin = 7 # D7
-pwm_pin = 6 # D6
+# pwm_pin = 6 # D6
 
 # pwm = board.digital[pwm_pin]
 # pwm.mode = SERVO
-pwm = board.get_pin(f'd:{pwm_pin}:p')
+# pwm = board.get_pin(f'd:{pwm_pin}:p')
 
 
 def callBack(pin, value):
@@ -125,7 +125,7 @@ def callBack(pin, value):
     # Callback for new samples from the Arduino
     rgb_led_controller.addData(value, pin)
     
-    rgb_led_controller.write_pwm(pwm, value)
+    # rgb_led_controller.write_pwm(pwm, value)
     
     # pwm.write(value)
     # time.sleep(0.01)

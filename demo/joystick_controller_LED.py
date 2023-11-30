@@ -113,11 +113,11 @@ board.samplingOn(1000 / samplingRate)
 x_axis_pin = 0 # A0
 y_axis_pin = 1 # A1
 sw_pin = 7 # D7
-# pwm_pin = 6 # D6
+pwm_pin = 6 # D6
 
 # pwm = board.digital[pwm_pin]
 # pwm.mode = SERVO
-# pwm = board.get_pin(f'd:{pwm_pin}:p')
+pwm = board.get_pin(f'd:{pwm_pin}:p')
 
 
 def callBack(pin, value):
@@ -127,7 +127,7 @@ def callBack(pin, value):
     
     # rgb_led_controller.write_pwm(pwm, value)
     
-    # pwm.write(value)
+    pwm.write(value)
     # time.sleep(0.01)
     # pwm.write(0)
 

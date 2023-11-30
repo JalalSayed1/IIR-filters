@@ -43,17 +43,25 @@ print("Setting up the connection to the board ...")
 
 # Setup the digital pin for PWM
 pwm_5 = board.get_pin('d:5:p')
+pwm_6 = board.get_pin('d:6:p')
 
-v = float(input("PWM duty cycle from 0 to 100: ")) / 100.0
+try:
+    while True:
+        v1 = float(input("PWM duty cycle from 0 to 100: ")) / 100.0
+        v2 = float(input("PWM duty cycle from 0 to 100: ")) / 100.0
 
-# Set the duty cycle (0..1)
-pwm_5.write(v)
+        # Set the duty cycle (0..1)
+        pwm_5.write(v1)
+        pwm_6.write(v2)
+        
 
-# just idle here
-input("Press enter to exit")
+except KeyboardInterrupt:
+    # just idle here
+    input("Press enter to exit")
 
-# pwm off
-pwm_5.write(0)
+    # pwm off
+    pwm_5.write(0)
+    pwm_6.write(0)
 
-# Close the serial connection to the Arduino
-board.exit()
+    # Close the serial connection to the Arduino
+    board.exit()

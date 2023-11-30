@@ -46,8 +46,8 @@ def update_led():
         board.digital[pin_green_led].write(pwm_y)
 
 # Function to animate the LED brightness
-# def animate(i):
-#     update_led()
+def animate(i):
+    update_led()
     
 def callBack(pin, value):
     update_led()
@@ -57,7 +57,7 @@ sampling_rate = 200
 board.samplingOn(1000 / sampling_rate)
 
 # Set up animation
-# ani = animation.FuncAnimation(plt.gcf(), animate, interval=50)
+ani = animation.FuncAnimation(plt.gcf(), animate, interval=50)
 
 board.analog[pin_x_axis].register_callback(lambda value, pin=pin_x_axis: callBack(pin, value))
 board.analog[pin_x_axis].enable_reporting()

@@ -1,8 +1,8 @@
 from pyfirmata2 import Arduino, PWM
 import time
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import numpy as np
 
 PORT = Arduino.AUTODETECT
 
@@ -57,12 +57,65 @@ def update_led_brightness(pin_value):
 # Function to animate the LED brightness
 # def animate(i):
 #     update_led()
+
+#' plotting
+# Create lists to store data for plotting
+time_vals = []
+pin_vals = []
+
+# Set up the plot
+fig, ax = plt.subplots()
+line, = ax.plot([], [], 'b-', label='Pin Value')
+ax.set_xlim(0, 10)  # Set initial x-axis limits
+ax.set_ylim(-0.5, 1.5)   # Set y-axis limits (adjust as needed)
+ax.set_xlabel('Time')
+ax.set_ylabel('Pin Value')
+ax.legend()
+
+# Function to update the plot data
+def update_plot(frame):
+    global time_vals, pin_vals
+
+    # Read data from the pin (modify this according to your setup)
+    pin_value = board.analog[pin_x_axis].read()
+
+    # Append values to the lists
+    current_time = time.time()
+    time_vals.append(current_time)  # Use current time for x-axis
+    pin_vals.append(pin_value)
     
+    # Filter and limit the data to display in the plot
+    time_window = 10  # Set the time window to display (adjust as needed)
+    time_vals = [t for t in time_vals if current_time - t <= time_window]
+    pin_vals = pin_vals[-len(time_vals):]
+
+    # Update the plot with new data
+    line.set_data(time_vals, pin_vals)
+
+    # Update x-axis limits to display the most recent data
+    if time_vals:
+        ax.set_xlim(time_vals[0], time_vals[-1])
+
+    return line,
+
+# Function to initialize the plot
+def init():
+    line.set_data([], [])
+    return line,
+
+# Set up the animation
+ani = animation.FuncAnimation(fig, update_plot, frames=np.linspace(0, 10, 100),
+                              init_func=init, blit=True, interval=100)
+
+#'------------
+
 def callBack(pin, value):
 
     if pin == 0:
         print(f"pin: {pin} \t value: {value}")
         update_led_colour(value)
+        
+        
     # elif pin == 1:
         # update_led_brightness(value)
         # pass
@@ -81,9 +134,9 @@ board.analog[pin_y_axis].enable_reporting()
 
 try:
     # Show the plot (this will not close automatically)
-    # plt.show()
-    while True:
-        time.sleep(1)
+    plt.show()
+    # while True:
+    #     time.sleep(1)
     
 except KeyboardInterrupt as e:
     print("KeyboardInterrupt")

@@ -51,6 +51,19 @@ class IIR_filter:
 
 # Define the bandstop and lowpass filter initialization functions
 def initialize_bandstop_filter(fs, f0, f1, filter_order):
+    """
+    Initializes a bandstop filter with the given parameters.
+
+    Parameters:
+    fs (float): The sampling frequency.
+    f0 (float): The lower cutoff frequency of the bandstop filter.
+    f1 (float): The upper cutoff frequency of the bandstop filter.
+    filter_order (int): The order of the filter.
+
+    Returns:
+    IIR_filter: The initialized bandstop filter.
+
+    """
     sos = signal.butter(filter_order, [f0/fs*2, f1/fs*2], 'bandstop', output='sos')
     print("Bandstop Filter SOS Values:")
     for values in sos:
@@ -64,6 +77,13 @@ def initialize_lowpass_filter(fs, f2, filter_order):
         print(values)
     return IIR_filter(sos)
 
+def initialize_bandpass_filter(fs, f3, f4, filter_order):
+    sos = signal.butter(filter_order, [f3/fs*2, f4/fs*2], 'bandpass', output='sos')
+    print("Bandpass Filter SOS Values:")
+    for values in sos:
+        print(values)
+    return IIR_filter(sos)
+
 # Generate a sample signal
 fs = 1000  # Sampling rate
 t = np.arange(0, 1.0, 1/fs)  # Time vector
@@ -73,6 +93,8 @@ sig = np.sin(2 * np.pi * 5 * t) + np.sin(2 * np.pi * 50 * t) + np.sin(2 * np.pi 
 f0 = 120  # Bandstop lower cutoff
 f1 = 140  # Bandstop upper cutoff
 f2 = 100.0  # Lowpass cutoff
+f3 = 120  # Bandpass lower cutoff
+f4 = 140  # Bandpass upper cutoff
 filter_order = 2
 
 iir_bandstop = initialize_bandstop_filter(fs, f0, f1, filter_order)
@@ -98,4 +120,3 @@ plt.ylabel('Amplitude')
 
 plt.tight_layout()
 plt.show()
-

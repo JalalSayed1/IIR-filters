@@ -11,9 +11,15 @@ This Python script visualizes joystick data from an Arduino board using PyFirmat
 
 Install the required Python packages using pip:
 
-```bash
-pip install pyfirmata matplotlib numpy
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   or
+
+   ```bash
+   pip install pyfirmata matplotlib numpy
+   ```
 
 ## Usage
 

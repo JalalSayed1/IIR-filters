@@ -2,11 +2,14 @@ from pyfirmata2 import Arduino, PWM
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+from py_iir_filter.iir_filter import IIR_filter
+from scipy.signal import butter, sosfreqz
 
 # Constants
 PORT = Arduino.AUTODETECT
 BUFFER_SIZE = 500
 SAMPLING_RATE = 200
+LP_CUTOFF = 20
 
 # Arduino Setup
 board = Arduino(PORT)
@@ -35,25 +38,31 @@ def interpolate(val, start_orig, end_orig, start_target, end_target):
 
 # Initialize Data Buffers
 time_domain_data = np.zeros(BUFFER_SIZE)
+fig, (ax_time, ax_freq) = None, (None, None)
+line_time = None
+line_freq = None
 
-# Initialize Figures
-fig, (ax_time, ax_freq) = plt.subplots(2, 1,)
+def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq):
+    # Initialize Figures
+    fig, (ax_time, ax_freq) = plt.subplots(2, 1,)
 
-# Time Domain Plot
-ax_time.set_xlabel('Time')
-ax_time.set_ylabel('X-axis Value')
-ax_time.set_title('Time Domain')
-ax_time.set_ylim(-0.1, 1.1)
-line_time, = ax_time.plot(np.arange(BUFFER_SIZE), time_domain_data, label='X-axis value')
+    # Time Domain Plot
+    ax_time.set_xlabel('Time')
+    ax_time.set_ylabel('X-axis Value')
+    ax_time.set_title('Time Domain')
+    ax_time.set_ylim(-0.1, 1.1)
+    line_time, = ax_time.plot(np.arange(BUFFER_SIZE), time_domain_data, label='X-axis value')
 
-# Frequency Domain Plot
-ax_freq.set_xlabel('Frequency')
-ax_freq.set_ylabel('Amplitude')
-ax_freq.set_title('Frequency Domain')
-line_freq, = ax_freq.plot([], [], label='X-axis Value (Frequency Domain)')
-ax_freq.set_xlim(0, SAMPLING_RATE / 2)
-ax_freq.set_ylim(0, 50)
-ax_freq.set_xticks(np.arange(0, SAMPLING_RATE/2 + 1, 10))
+    # Frequency Domain Plot
+    ax_freq.set_xlabel('Frequency')
+    ax_freq.set_ylabel('Amplitude')
+    ax_freq.set_title('Frequency Domain')
+    line_freq, = ax_freq.plot([], [], label='X-axis Value (Frequency Domain)')
+    ax_freq.set_xlim(0, SAMPLING_RATE / 2)
+    ax_freq.set_ylim(0, 50)
+    ax_freq.set_xticks(np.arange(0, SAMPLING_RATE/2 + 1, 10))
+    
+    return fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq
 
 # Function to Update Plots
 def update_plot(frame):
@@ -80,18 +89,18 @@ def init():
     line_freq.set_data([], [])
     return line_time, line_freq
 
-# Create Animation
-ani = animation.FuncAnimation(fig, update_plot, init_func=init, blit=True, interval=1)
-
 # Arduino Callback for LED Update
 def joystick_callback(value):
     update_led_color(value)
 
-board.analog[pin_x_axis].register_callback(joystick_callback)
-board.analog[pin_x_axis].enable_reporting()
-
-# Show Plot
 try:
+    fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq = setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq)
+    # Create Animation
+    ani = animation.FuncAnimation(fig, update_plot, init_func=init, blit=True, interval=1)
+    board.analog[pin_x_axis].register_callback(joystick_callback)
+    board.analog[pin_x_axis].enable_reporting()
+
+    # Show Plot
     plt.tight_layout()
     plt.show()
     

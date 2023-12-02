@@ -27,10 +27,10 @@ pip install pyfirmata matplotlib numpy
    - Connect the other RB LED to the same pins but swap the red and blue pins (to make a switching effect).
    - Connect both GND pins to the board's GND.
    - No resistors are needed.
-4. Run `joystick.py` script:
+4. Run `main.py` script:
 
     ```bash
-    python joystick.py
+    python main.py
     ```
 
     The script will start visualizing the joystick data on a Matplotlib graph in real-time.

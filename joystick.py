@@ -29,11 +29,16 @@ sos = butter(2, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
 iir_filter = IIR_filter(sos)
 
 #' Plotting:
-time_domain_data = np.zeros(BUFFER_SIZE)
-filtered_time_domain_data = np.zeros(BUFFER_SIZE)
+# initialized to none so they will be created in setup_plotting()
 fig, (ax_time, ax_freq) = None, (None, None)
 line_time = None
+filtered_line_time = None
 line_freq = None
+filtered_line_freq = None
+time_domain_data = np.zeros(BUFFER_SIZE)
+filtered_time_domain_data = np.zeros(BUFFER_SIZE)
+freq_domain_data = np.zeros(BUFFER_SIZE // 2)
+filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 
 # Function to update LED color based on joystick values
 def update_led_color(pin_value):
@@ -47,29 +52,32 @@ def update_led_color(pin_value):
 def interpolate(val, start_orig, end_orig, start_target, end_target):
     return ((val - start_orig) / (end_orig - start_orig)) * (end_target - start_target) + start_target
 
-def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq):
+def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time):
     # Initialize Figures
-    fig, (ax_time, ax_freq) = plt.subplots(2, 1,)
+    fig, (ax_time, ax_freq) = plt.subplots(2, 1)
 
     # Time Domain Plot
     ax_time.set_xlabel('Time')
     ax_time.set_ylabel('X-axis Value')
     ax_time.set_title('Time Domain')
     ax_time.set_ylim(-0.1, 1.1)
-    ax_time.legend()
-    line_time, = ax_time.plot(np.arange(BUFFER_SIZE), time_domain_data, label='X-axis value (time domain)')
+    line_time, = ax_time.plot(np.arange(BUFFER_SIZE), time_domain_data, label='X-axis value')
+    filtered_line_time, = ax_time.plot(np.arange(BUFFER_SIZE), filtered_time_domain_data, label='Filtered X-axis value')
+    ax_time.legend()  # Add legend for time domain plot
 
     # Frequency Domain Plot
     ax_freq.set_xlabel('Frequency')
     ax_freq.set_ylabel('Amplitude')
     ax_freq.set_title('Frequency Domain')
-    line_freq, = ax_freq.plot([], [], label='X-axis value (Frequency Domain)')
     ax_freq.set_xlim(0, SAMPLING_RATE / 2)
     ax_freq.set_ylim(0, 50)
-    ax_freq.legend()
     ax_freq.set_xticks(np.arange(0, SAMPLING_RATE/2 + 1, 10))
+    line_freq, = ax_freq.plot([], [], label='X-axis value')
+    filtered_line_freq, = ax_freq.plot([], [], label='Filtered X-axis value')
+    ax_freq.legend()  # Add legend for frequency domain plot
     
-    return fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq
+    return fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time, filtered_line_freq
+
 
 # Function to Update Plots
 def update_plot(frame):
@@ -78,46 +86,54 @@ def update_plot(frame):
     # Update Time Domain Data
     new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
     if new_data is not None:
-        # Filter the incoming data using the IIR filter
-        filtered_data = iir_filter.filter(new_data)
-        
+        # store raw data:
         time_domain_data = np.roll(time_domain_data, -1)
         time_domain_data[-1] = new_data
+        
+        # Apply filter:
+        filtered_data = iir_filter.filter(new_data)
         filtered_time_domain_data = np.roll(filtered_time_domain_data, -1)
         filtered_time_domain_data[-1] = filtered_data
-        # plot the data:
+
+        # plot time domain data:
         line_time.set_ydata(time_domain_data)
-        line_time.set_ydata(filtered_time_domain_data)
+        filtered_line_time.set_ydata(filtered_time_domain_data)
 
         # Update Frequency Domain Data
         fft_data = np.fft.fft(time_domain_data)
         filtered_fft_data = np.fft.fft(filtered_time_domain_data)
+        # get the frequency bins:
         fft_freq = np.fft.fftfreq(BUFFER_SIZE, 1 / SAMPLING_RATE)
-        mask = fft_freq > 0 # Only plot the positive frequencies
+        
         # plot the data:
+        mask = fft_freq > 0 # Only plot the positive frequencies
         line_freq.set_data(fft_freq[mask], np.abs(fft_data[mask]))
-        line_freq.set_data(fft_freq[mask], np.abs(filtered_fft_data[mask]))
+        filtered_line_freq.set_data(fft_freq[mask], np.abs(filtered_fft_data[mask]))
 
-    return line_time, line_freq
+    return line_time, line_freq, filtered_line_time, filtered_line_freq
 
 # Function to Initialize the Plot
 def init():
     line_time.set_ydata(np.zeros(BUFFER_SIZE))
+    filtered_line_time.set_ydata(np.zeros(BUFFER_SIZE))
     line_freq.set_data([], [])
-    return line_time, line_freq
+    filtered_line_freq.set_data([], [])
+    return line_time, line_freq, filtered_line_time, filtered_line_freq
 
 # Arduino Callback for LED Update
-def joystick_callback(value):
+def callBack(value):
     update_led_color(value)
 
 
-try:
-    fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq = setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq)
-    # Create Animation
-    ani = animation.FuncAnimation(fig, update_plot, init_func=init, blit=True, interval=1)
-    board.analog[X_AXIS_INPUT].register_callback(joystick_callback)
-    board.analog[X_AXIS_INPUT].enable_reporting()
+# Setup everything related to plotting:
+fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time, filtered_line_freq = setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time)
 
+# Create Animation
+ani = animation.FuncAnimation(fig, update_plot, init_func=init, blit=True, interval=1)
+board.analog[X_AXIS_INPUT].register_callback(callBack)
+board.analog[X_AXIS_INPUT].enable_reporting()
+
+try:
     plt.tight_layout()
     plt.show()
     

@@ -8,13 +8,13 @@ This Python script visualizes joystick data from an Arduino board using PyFirmat
 - PyFirmata 2.x
 - Matplotlib
 - NumPy
-- Py-IIR-Filter
 
 Install the required Python packages using pip:
 
 ```bash
 pip install pyfirmata matplotlib numpy
 ```
+
 ## Usage
 
 1. Connect your Arduino board to your computer.
@@ -28,14 +28,13 @@ pip install pyfirmata matplotlib numpy
    - Connect both GND pins to the board's GND.
    - No resistors are needed.
 4. Run `joystick.py` script:
+
     ```bash
     python joystick.py
     ```
+
     The script will start visualizing the joystick data on a Matplotlib graph in real-time.
 
 ## Video demo
 
 [![Video demo](https://img.youtube.com/vi/2Z3Z4Z3Z4Z4/0.jpg)](https://www.youtube.com/watch?v=2Z3Z4Z3Z4Z4)
-
-
-

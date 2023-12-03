@@ -1,4 +1,4 @@
-pyfirmata2==2.0.1
-matplotlib==3.4.3
-numpy==1.21.4
-scipy==1.7.3
+pyfirmata2
+matplotlib
+numpy
+scipy

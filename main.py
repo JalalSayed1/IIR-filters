@@ -44,6 +44,13 @@ filtered_time_domain_data = np.zeros(BUFFER_SIZE)
 freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 
+# current sample from pin:
+current_sample = 0.0
+# Use the filtered data to update the LED or raw data (True or False):
+use_filtered_data = True
+
+print(f"Sampling rate: {SAMPLING_RATE} Hz")
+print("Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED..")
 
 # Function to update LED color based on joystick values
 def update_led_color(pin_value):
@@ -89,17 +96,17 @@ def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq
 
 # Function to Update Plots
 def update_plot(frame):
-    global time_domain_data, filtered_time_domain_data
+    global time_domain_data, filtered_time_domain_data, current_sample, use_filtered_data
 
     # Update Time Domain Data
-    new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
-    if new_data is not None:
+    # new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
+    if current_sample is not None:
         # store raw data:
         time_domain_data = np.roll(time_domain_data, -1)
-        time_domain_data[-1] = new_data
+        time_domain_data[-1] = current_sample
 
         # Apply filter:
-        filtered_data = iir_filter.filter(new_data)
+        filtered_data = iir_filter.filter(current_sample)
         filtered_time_domain_data = np.roll(filtered_time_domain_data, -1)
         filtered_time_domain_data[-1] = filtered_data
 
@@ -119,6 +126,14 @@ def update_plot(frame):
         filtered_line_freq.set_data(
             fft_freq[mask], np.abs(filtered_fft_data[mask]))
 
+    if use_filtered_data:
+        # max value for filtered data is 1 and min is 0. Check that is true:
+        filtered_data = np.clip(filtered_data, 0, 1)
+        print(f"Filtered data: {filtered_data}")
+        update_led_color(filtered_data)
+    else:
+        update_led_color(current_sample)
+
     return line_time, line_freq, filtered_line_time, filtered_line_freq
 
 
@@ -133,7 +148,9 @@ def init():
 
 # Arduino Callback for LED Update
 def callback(value):
-    update_led_color(value)
+    # update_led_color(value)
+    global current_sample
+    current_sample = value
 
 
 # Setup everything related to plotting:

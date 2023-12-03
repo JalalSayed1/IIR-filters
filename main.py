@@ -5,6 +5,7 @@ import numpy as np
 from py_iir_filter.iir_filter import IIR_filter
 from scipy.signal import butter
 import tkinter as tk
+import time
 
 # ' Constants
 X_AXIS_INPUT = 0  # Analog pin A0 for X axis
@@ -48,6 +49,22 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 
 # current sample from pin:
 current_sample = 0.0
+# used to calculate the actual sampling rate:
+sample_count = 0
+last_time_checked = time.time()
+actual_sampling_rate = 0
+current_sample = 0.0
+
+# Function to check actual sampling rate for data acquisition 
+def check_sampling_rate():
+    global last_time_checked, sample_count, actual_sampling_rate
+    current_time = time.time()
+    elapsed_time = current_time - last_time_checked
+    if elapsed_time >= 1.0:  # Check every second
+        actual_sampling_rate = sample_count / elapsed_time
+        print(f"Actual Sampling Rate: {actual_sampling_rate:.3f} Hz vs set sampling rate: {SAMPLING_RATE} Hz")
+        sample_count = 0
+        last_time_checked = current_time
 
 # Make a button to toggle between using filtered data or not in real time:
 use_filtered_data = False
@@ -133,7 +150,7 @@ def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq
 # Function to Update Plots
 def update(frame):
     global time_domain_data, filtered_time_domain_data, current_sample, use_filtered_data
-
+    check_sampling_rate()
     if current_sample is not None:
         # Update Time Domain Data
         # store raw data:
@@ -165,10 +182,10 @@ def update(frame):
     if use_filtered_data:
         # max value for filtered data is 1 and min is 0. Check that is true:
         filtered_data = np.clip(filtered_data, 0, 1)
-        print(f"Filtered data: {filtered_data}")
+        #print(f"Filtered data: {filtered_data}")
         update_led_color(filtered_data)
     else:
-        print(f"Raw data: {current_sample}")
+        #print(f"Raw data: {current_sample}")
         update_led_color(current_sample)
 
     return line_time, line_freq, filtered_line_time, filtered_line_freq
@@ -185,9 +202,9 @@ def init():
 
 # Arduino Callback for LED Update
 def callback(value):
-    global current_sample
+    global current_sample, sample_count
     current_sample = value
-
+    sample_count += 1
 
 # Setup everything related to plotting:
 fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time, filtered_line_freq = setup_plotting(

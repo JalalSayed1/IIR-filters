@@ -53,8 +53,8 @@ Install the required Python packages using pip:
     python main.py
     ```
 
-    The script will start visualizing the joystick data on a Matplotlib graph in real-time.
+    The script will start visualizing the joystick data on a Matplotlib graph in real-time and another small window will appear with a button to toggle between using raw data or filtered data to update the LEDs in real time.
 
 ## Video demo
 
-[![Video demo](https://img.youtube.com/vi/2Z3Z4Z3Z4Z4/0.jpg)](https://www.youtube.com/watch?v=2Z3Z4Z3Z4Z4)
+[![Video demo](https://img.youtube.com/vi/jVWNfqF8uNY/0.jpg)](https://www.youtube.com/watch?v=jVWNfqF8uNY)

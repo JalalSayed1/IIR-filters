@@ -195,7 +195,7 @@ fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq, filtered_time_d
 
 # Create Animation
 ani = animation.FuncAnimation(
-    fig, update, init_func=init, blit=True, interval=1)
+    fig, update, init_func=init, blit=True, interval=1, cache_frame_data=False)
 
 board.analog[X_AXIS_INPUT].register_callback(callback)
 board.analog[X_AXIS_INPUT].enable_reporting()

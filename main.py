@@ -49,9 +49,11 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 # current sample from pin:
 current_sample = 0.0
 
-# Make a button to toggle between using filtered data or not in real time: 
+# Make a button to toggle between using filtered data or not in real time:
 use_filtered_data = False
 status_text = None
+
+
 # Use the filtered data to update the LED or raw data (True or False):
 def toggle_filtered_data():
     global use_filtered_data, status_text
@@ -59,6 +61,7 @@ def toggle_filtered_data():
     text = "Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED.."
     print(text)
     status_text.config(text=text)
+
 
 # Create a function to setup the GUI elements
 def setup_gui():
@@ -73,15 +76,16 @@ def setup_gui():
     screen_height = root.winfo_screenheight()
     x_coordinate = (screen_width / 2) - (window_width / 2)
     y_coordinate = (screen_height / 2) - (window_height / 2)
-    root.geometry("%dx%d+%d+%d" % (window_width, window_height, x_coordinate, y_coordinate))
+    root.geometry("%dx%d+%d+%d" %
+                  (window_width, window_height, x_coordinate, y_coordinate))
 
     # Create" a button to toggle filtered data
-    toggle_button = tk.Button(root, text="Toggle LED response", command=toggle_filtered_data)
-    
+    toggle_button = tk.Button(
+        root, text="Toggle LED response", command=toggle_filtered_data)
+
     text = "Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED.."
     status_text = tk.Label(root, text=text)
-    
-    
+
     status_text.pack()
     toggle_button.pack()
 
@@ -90,16 +94,12 @@ def setup_gui():
 
 # Function to update LED color based on joystick values
 def update_led_color(pin_value):
-    duty_cycle_red = interpolate(pin_value, 0, 1, 0, 1)
+    # pin_value is already between 0 and 1:
+    duty_cycle_red = pin_value
     duty_cycle_blue = 1 - duty_cycle_red
 
     board.digital[LED_RED_PIN].write(duty_cycle_red)
     board.digital[LED_BLUE_PIN].write(duty_cycle_blue)
-
-
-# Function to interpolate values
-def interpolate(val, start_orig, end_orig, start_target, end_target):
-    return ((val - start_orig) / (end_orig - start_orig)) * (end_target - start_target) + start_target
 
 
 def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq, filtered_time_domain_data, filtered_line_time):
@@ -131,12 +131,11 @@ def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq
 
 
 # Function to Update Plots
-def update_plot(frame):
+def update(frame):
     global time_domain_data, filtered_time_domain_data, current_sample, use_filtered_data
 
-    # Update Time Domain Data
-    # new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
     if current_sample is not None:
+        # Update Time Domain Data
         # store raw data:
         time_domain_data = np.roll(time_domain_data, -1)
         time_domain_data[-1] = current_sample
@@ -162,6 +161,7 @@ def update_plot(frame):
         filtered_line_freq.set_data(
             fft_freq[mask], np.abs(filtered_fft_data[mask]))
 
+    # Update LED
     if use_filtered_data:
         # max value for filtered data is 1 and min is 0. Check that is true:
         filtered_data = np.clip(filtered_data, 0, 1)
@@ -185,7 +185,6 @@ def init():
 
 # Arduino Callback for LED Update
 def callback(value):
-    # update_led_color(value)
     global current_sample
     current_sample = value
 
@@ -196,14 +195,13 @@ fig, (ax_time, ax_freq), time_domain_data, line_time, line_freq, filtered_time_d
 
 # Create Animation
 ani = animation.FuncAnimation(
-    fig, update_plot, init_func=init, blit=True, interval=1)
+    fig, update, init_func=init, blit=True, interval=1)
 
 board.analog[X_AXIS_INPUT].register_callback(callback)
 board.analog[X_AXIS_INPUT].enable_reporting()
 
 try:
     root = setup_gui()
-    # root.mainloop()
     plt.tight_layout()
     plt.show()
 

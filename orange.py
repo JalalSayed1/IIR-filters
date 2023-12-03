@@ -4,6 +4,9 @@ import matplotlib.animation as animation
 import numpy as np
 from py_iir_filter.iir_filter import IIR_filter
 from scipy.signal import butter
+import time  
+
+#The code snippet provided is a Python script that uses a joystick with two axes to control the brightness of two LEDs, creating a disco color effect.
 
 # ' Constants
 X_AXIS_INPUT = 0  # Analog pin A0 for X axis
@@ -27,12 +30,21 @@ board.samplingOn(1000 / SAMPLING_RATE)
 board.digital[LED_RED_PIN].mode = PWM
 board.digital[LED_BLUE_PIN].mode = PWM
 
-# ' IIR filter:
-LP_CUTOFF = 10  # Hz
+# # ' IIR filter:
+# LP_CUTOFF = 10  # Hz
+# NYQUIST_RATE = SAMPLING_RATE / 2
+# sos = butter(4, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
+# iir_filter = IIR_filter(sos)
+# sos_y = butter(2, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
+# iir_filter_y = IIR_filter(sos_y)
+
+# ' IIR filter - bandpass : not utilised as it causes the LED to flicker
+LOW_CUTOFF = 4  # Hz (lower cutoff frequency)
+HIGH_CUTOFF = 8  # Hz (higher cutoff frequency)
 NYQUIST_RATE = SAMPLING_RATE / 2
-sos = butter(4, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
+sos = butter(4, [LOW_CUTOFF / NYQUIST_RATE, HIGH_CUTOFF / NYQUIST_RATE], 'bandpass', output='sos')
 iir_filter = IIR_filter(sos)
-sos_y = butter(2, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
+sos_y = butter(4, [LOW_CUTOFF / NYQUIST_RATE, HIGH_CUTOFF / NYQUIST_RATE], 'bandpass', output='sos')
 iir_filter_y = IIR_filter(sos_y)
 
 # ' Plotting:
@@ -50,40 +62,33 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 time_domain_data_y = np.zeros(BUFFER_SIZE)
 filtered_time_domain_data_y = np.zeros(BUFFER_SIZE)
 
+last_time = time.time()
+samples_count = 0
+actual_sampling_rate = 0
 
 
 new_data_x = board.analog[X_AXIS_INPUT].read()  # X-axis data
 new_data_y = board.analog[Y_AXIS_INPUT].read()  # Y-axis data
 
-# def callback():
-#     if new_data_x is not None:
-#         # Apply filter to X and Y data
-#         filtered_data_x = iir_filter.filter([new_data_x])[0]  # Access the filtered value from the list
-#         filtered_data_y = iir_filter_y.filter([new_data_y])[0]  # Access the filtered value from the list
-
-#         # Logic to update LED based on filtered X and Y data
-#         print(filtered_data_x, filtered_data_y)
-#         update_led_color(filtered_data_x, filtered_data_y)
-
-#new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
-
+# Function to Update LED on X-input
 def callback(new_data_x):
     if new_data_x is not None:
         # Apply filter
         filtered_data_x = iir_filter.filter([new_data_x])[-1]  # Filter the new data point
         # Update LED based on filtered data
-        print(filtered_data_x)
+        #print(filtered_data_x)
         update_red_color(filtered_data_x)  
 
+# Function to Update LED on Y-input
 def callback2(new_data_y):
     if new_data_y is not None:
         # Apply filter
         filtered_data_y = iir_filter_y.filter([new_data_y])[-1]  # Filter the new data point
         # Update LED based on filtered data
-        print(filtered_data_y)
+        #print(filtered_data_y)
         update_blue_color(filtered_data_y)     
 
-
+# Function to Update LED color based on joystick values
 def update_red_color(filtered_value_x):
     # Adjust these ranges as necessary 
     duty_cycle_red = interpolate(filtered_value_x, 0, 1, 0, 1)
@@ -93,7 +98,6 @@ def update_red_color(filtered_value_x):
 def update_blue_color(filtered_value_y):
     # Adjust these ranges as necessary 
     duty_cycle_blue = interpolate(filtered_value_y, 0, 1, 0, 1)
-    #duty_cycle_blue = 1 - duty_cycle_red
 
     board.digital[LED_BLUE_PIN].write(duty_cycle_blue)
 
@@ -144,7 +148,7 @@ def setup_plotting():
 
 # Function to Update Plots
 def update_plot(frame):
-    global time_domain_data, filtered_time_domain_data, time_domain_data_y, filtered_time_domain_data_y
+    global time_domain_data, filtered_time_domain_data, time_domain_data_y, filtered_time_domain_data_y, last_time, samples_count, actual_sampling_rate
 
     # Update Time Domain Data
     new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
@@ -193,6 +197,18 @@ def update_plot(frame):
 
         line_freq_y.set_data(fft_freq[mask], np.abs(fft_data_y[mask]))
         filtered_line_freq_y.set_data(fft_freq[mask], np.abs(filtered_fft_data_y[mask]))
+
+    samples_count += 1
+    if samples_count >= BUFFER_SIZE:
+        current_time = time.time()
+        elapsed_time = current_time - last_time
+        actual_sampling_rate = BUFFER_SIZE / elapsed_time
+        last_time = current_time
+        samples_count = 0
+
+        # Display the sampling rate on the plot
+        ax_time.set_title(f'Time Domain (Sampling rate: {actual_sampling_rate:.2f} Hz)')
+
 
     return line_time, line_freq, filtered_line_time, filtered_line_freq, line_time_y, line_freq_y, filtered_line_time_y, filtered_line_freq_y
 

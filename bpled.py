@@ -4,9 +4,6 @@ import matplotlib.animation as animation
 import numpy as np
 from py_iir_filter.iir_filter import IIR_filter
 from scipy.signal import butter
-import time  
-
-#The code snippet provided is a Python script that uses a joystick with two axes to control the brightness of two LEDs, creating a disco color effect.
 
 # ' Constants
 X_AXIS_INPUT = 0  # Analog pin A0 for X axis
@@ -38,13 +35,13 @@ board.digital[LED_BLUE_PIN].mode = PWM
 # sos_y = butter(2, LP_CUTOFF / NYQUIST_RATE, btype='low', output='sos')
 # iir_filter_y = IIR_filter(sos_y)
 
-# ' IIR filter - bandpass : not utilised as it causes the LED to flicker
-LOW_CUTOFF = 4  # Hz (lower cutoff frequency)
-HIGH_CUTOFF = 8  # Hz (higher cutoff frequency)
+# ' IIR filter - bandpass  
+BS_LOW_CUTOFF = 2  # Hz (lower cutoff frequency)
+BS_HIGH_CUTOFF = 6  # Hz (higher cutoff frequency)
 NYQUIST_RATE = SAMPLING_RATE / 2
-sos = butter(4, [LOW_CUTOFF / NYQUIST_RATE, HIGH_CUTOFF / NYQUIST_RATE], 'bandpass', output='sos')
+sos = butter(2, [BS_LOW_CUTOFF / NYQUIST_RATE, BS_HIGH_CUTOFF / NYQUIST_RATE], btype='bandpass', output='sos')
 iir_filter = IIR_filter(sos)
-sos_y = butter(4, [LOW_CUTOFF / NYQUIST_RATE, HIGH_CUTOFF / NYQUIST_RATE], 'bandpass', output='sos')
+sos_y = butter(2, [BS_LOW_CUTOFF / NYQUIST_RATE, BS_HIGH_CUTOFF / NYQUIST_RATE], btype='bandpass', output='sos')
 iir_filter_y = IIR_filter(sos_y)
 
 # ' Plotting:
@@ -62,11 +59,12 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 time_domain_data_y = np.zeros(BUFFER_SIZE)
 filtered_time_domain_data_y = np.zeros(BUFFER_SIZE)
 
-# Read initial data
+
+
 new_data_x = board.analog[X_AXIS_INPUT].read()  # X-axis data
 new_data_y = board.analog[Y_AXIS_INPUT].read()  # Y-axis data
 
-# Function to Update LED on X-input
+
 def callback(new_data_x):
     if new_data_x is not None:
         # Apply filter
@@ -75,7 +73,6 @@ def callback(new_data_x):
         #print(filtered_data_x)
         update_red_color(filtered_data_x)  
 
-# Function to Update LED on Y-input
 def callback2(new_data_y):
     if new_data_y is not None:
         # Apply filter
@@ -84,7 +81,7 @@ def callback2(new_data_y):
         #print(filtered_data_y)
         update_blue_color(filtered_data_y)     
 
-# Function to Update LED color based on joystick values
+
 def update_red_color(filtered_value_x):
     # Adjust these ranges as necessary 
     duty_cycle_red = interpolate(filtered_value_x, 0, 1, 0, 1)
@@ -94,6 +91,7 @@ def update_red_color(filtered_value_x):
 def update_blue_color(filtered_value_y):
     # Adjust these ranges as necessary 
     duty_cycle_blue = interpolate(filtered_value_y, 0, 1, 0, 1)
+    #duty_cycle_blue = 1 - duty_cycle_red
 
     board.digital[LED_BLUE_PIN].write(duty_cycle_blue)
 
@@ -114,13 +112,13 @@ def setup_plotting():
     ax_time.set_title('Time Domain')
     ax_time.set_ylim(-0.1, 1.1)
 
-    # line_time, = ax_time.plot(np.arange(BUFFER_SIZE),
-    #                           time_domain_data, label='X-axis value', color='blue')
+    line_time, = ax_time.plot(np.arange(BUFFER_SIZE),
+                              time_domain_data, label='X-axis value', color='blue')
     filtered_line_time, = ax_time.plot(np.arange(BUFFER_SIZE), 
                                        filtered_time_domain_data, label='Filtered X-axis value', color='cyan')
 
-    # line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE),
-    #                             time_domain_data_y, label='Y-axis value', color='green')
+    line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE),
+                                time_domain_data_y, label='Y-axis value', color='green')
     filtered_line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE), 
                                          filtered_time_domain_data_y, label='Filtered Y-axis value', color='orange')
 
@@ -145,7 +143,8 @@ def setup_plotting():
 # Function to Update Plots
 def update_plot(frame):
     global time_domain_data, filtered_time_domain_data, time_domain_data_y, filtered_time_domain_data_y
-        # Update Time Domain Data
+
+    # Update Time Domain Data
     new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
     new_data_y = board.analog[Y_AXIS_INPUT].read()  # Read new data from Arduino
     

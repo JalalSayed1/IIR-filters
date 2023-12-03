@@ -62,11 +62,7 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 time_domain_data_y = np.zeros(BUFFER_SIZE)
 filtered_time_domain_data_y = np.zeros(BUFFER_SIZE)
 
-last_time = time.time()
-samples_count = 0
-actual_sampling_rate = 0
-
-
+# Read initial data
 new_data_x = board.analog[X_AXIS_INPUT].read()  # X-axis data
 new_data_y = board.analog[Y_AXIS_INPUT].read()  # Y-axis data
 
@@ -118,13 +114,13 @@ def setup_plotting():
     ax_time.set_title('Time Domain')
     ax_time.set_ylim(-0.1, 1.1)
 
-    line_time, = ax_time.plot(np.arange(BUFFER_SIZE),
-                              time_domain_data, label='X-axis value', color='blue')
+    # line_time, = ax_time.plot(np.arange(BUFFER_SIZE),
+    #                           time_domain_data, label='X-axis value', color='blue')
     filtered_line_time, = ax_time.plot(np.arange(BUFFER_SIZE), 
                                        filtered_time_domain_data, label='Filtered X-axis value', color='cyan')
 
-    line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE),
-                                time_domain_data_y, label='Y-axis value', color='green')
+    # line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE),
+    #                             time_domain_data_y, label='Y-axis value', color='green')
     filtered_line_time_y, = ax_time.plot(np.arange(BUFFER_SIZE), 
                                          filtered_time_domain_data_y, label='Filtered Y-axis value', color='orange')
 
@@ -148,9 +144,8 @@ def setup_plotting():
 
 # Function to Update Plots
 def update_plot(frame):
-    global time_domain_data, filtered_time_domain_data, time_domain_data_y, filtered_time_domain_data_y, last_time, samples_count, actual_sampling_rate
-
-    # Update Time Domain Data
+    global time_domain_data, filtered_time_domain_data, time_domain_data_y, filtered_time_domain_data_y
+        # Update Time Domain Data
     new_data = board.analog[X_AXIS_INPUT].read()  # Read new data from Arduino
     new_data_y = board.analog[Y_AXIS_INPUT].read()  # Read new data from Arduino
     
@@ -197,18 +192,6 @@ def update_plot(frame):
 
         line_freq_y.set_data(fft_freq[mask], np.abs(fft_data_y[mask]))
         filtered_line_freq_y.set_data(fft_freq[mask], np.abs(filtered_fft_data_y[mask]))
-
-    samples_count += 1
-    if samples_count >= BUFFER_SIZE:
-        current_time = time.time()
-        elapsed_time = current_time - last_time
-        actual_sampling_rate = BUFFER_SIZE / elapsed_time
-        last_time = current_time
-        samples_count = 0
-
-        # Display the sampling rate on the plot
-        ax_time.set_title(f'Time Domain (Sampling rate: {actual_sampling_rate:.2f} Hz)')
-
 
     return line_time, line_freq, filtered_line_time, filtered_line_freq, line_time_y, line_freq_y, filtered_line_time_y, filtered_line_freq_y
 

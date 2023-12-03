@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 import numpy as np
 from py_iir_filter.iir_filter import IIR_filter
 from scipy.signal import butter
+import tkinter as tk
 
 # ' Constants
 X_AXIS_INPUT = 0  # Analog pin A0 for X axis
@@ -13,6 +14,7 @@ LED_BLUE_PIN = 6  # Digital pin D6 for blue LED
 PORT = Arduino.AUTODETECT
 BUFFER_SIZE = 300  # samples
 SAMPLING_RATE = 200  # Hz
+print(f"Sampling rate: {SAMPLING_RATE} Hz")
 
 # Plotting figure size:
 WIDTH = 15  # inches
@@ -46,11 +48,45 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 
 # current sample from pin:
 current_sample = 0.0
-# Use the filtered data to update the LED or raw data (True or False):
-use_filtered_data = True
 
-print(f"Sampling rate: {SAMPLING_RATE} Hz")
-print("Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED..")
+# Make a button to toggle between using filtered data or not in real time: 
+use_filtered_data = False
+status_text = None
+# Use the filtered data to update the LED or raw data (True or False):
+def toggle_filtered_data():
+    global use_filtered_data, status_text
+    use_filtered_data = not use_filtered_data
+    text = "Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED.."
+    print(text)
+    status_text.config(text=text)
+
+# Create a function to setup the GUI elements
+def setup_gui():
+    global use_filtered_data, status_text
+    root = tk.Tk()
+    root.title("Toggle Filtered Data")
+
+    # Set the initial size of the window (width x height)
+    window_width = 300
+    window_height = 100
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x_coordinate = (screen_width / 2) - (window_width / 2)
+    y_coordinate = (screen_height / 2) - (window_height / 2)
+    root.geometry("%dx%d+%d+%d" % (window_width, window_height, x_coordinate, y_coordinate))
+
+    # Create" a button to toggle filtered data
+    toggle_button = tk.Button(root, text="Toggle LED response", command=toggle_filtered_data)
+    
+    text = "Using filtered data to update LED.." if use_filtered_data else "NOT using filtered data to update LED.."
+    status_text = tk.Label(root, text=text)
+    
+    
+    status_text.pack()
+    toggle_button.pack()
+
+    return root
+
 
 # Function to update LED color based on joystick values
 def update_led_color(pin_value):
@@ -165,6 +201,8 @@ board.analog[X_AXIS_INPUT].register_callback(callback)
 board.analog[X_AXIS_INPUT].enable_reporting()
 
 try:
+    root = setup_gui()
+    # root.mainloop()
     plt.tight_layout()
     plt.show()
 

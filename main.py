@@ -68,7 +68,7 @@ def setup_gui():
 
     # Set the initial size of the window (width x height)
     window_width = 300
-    window_height = 100
+    window_height = 80
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x_coordinate = (screen_width / 2) - (window_width / 2)
@@ -168,6 +168,7 @@ def update_plot(frame):
         print(f"Filtered data: {filtered_data}")
         update_led_color(filtered_data)
     else:
+        print(f"Raw data: {current_sample}")
         update_led_color(current_sample)
 
     return line_time, line_freq, filtered_line_time, filtered_line_freq

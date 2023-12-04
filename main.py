@@ -49,11 +49,15 @@ filtered_freq_domain_data = np.zeros(BUFFER_SIZE // 2)
 
 # current sample from pin:
 current_sample = 0.0
-# used to calculate the actual sampling rate:
+
+# Make a button to toggle between using filtered data or not in real time:
+use_filtered_data = False
+status_text = None
+
+# To calculate actual sampling rate in real time:
 sample_count = 0
 last_time_checked = time.time()
 actual_sampling_rate = 0
-current_sample = 0.0
 
 # Function to check actual sampling rate for data acquisition 
 def check_sampling_rate():
@@ -65,11 +69,6 @@ def check_sampling_rate():
         print(f"Actual Sampling Rate: {actual_sampling_rate:.3f} Hz vs set sampling rate: {SAMPLING_RATE} Hz")
         sample_count = 0
         last_time_checked = current_time
-
-# Make a button to toggle between using filtered data or not in real time:
-use_filtered_data = False
-status_text = None
-
 
 # Use the filtered data to update the LED or raw data (True or False):
 def toggle_filtered_data():
@@ -109,8 +108,8 @@ def setup_gui():
     return root
 
 
-# Function to update LED color based on joystick values
-def update_led_color(pin_value):
+# Function to update LED colour based on joystick values
+def update_led_colour(pin_value):
     # pin_value is already between 0 and 1:
     duty_cycle_red = pin_value
     duty_cycle_blue = 1 - duty_cycle_red
@@ -150,7 +149,9 @@ def setup_plotting(fig, ax_time, ax_freq, time_domain_data, line_time, line_freq
 # Function to Update Plots
 def update(frame):
     global time_domain_data, filtered_time_domain_data, current_sample, use_filtered_data
+    
     check_sampling_rate()
+    
     if current_sample is not None:
         # Update Time Domain Data
         # store raw data:
@@ -183,10 +184,10 @@ def update(frame):
         # max value for filtered data is 1 and min is 0. Check that is true:
         filtered_data = np.clip(filtered_data, 0, 1)
         #print(f"Filtered data: {filtered_data}")
-        update_led_color(filtered_data)
+        update_led_colour(filtered_data)
     else:
         #print(f"Raw data: {current_sample}")
-        update_led_color(current_sample)
+        update_led_colour(current_sample)
 
     return line_time, line_freq, filtered_line_time, filtered_line_freq
 

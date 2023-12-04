@@ -58,3 +58,5 @@ Install the required Python packages using pip:
 ## Video demo
 
 [![Video demo](https://img.youtube.com/vi/jVWNfqF8uNY/0.jpg)](https://www.youtube.com/watch?v=jVWNfqF8uNY)
+
+[![Video demo](https://img.youtube.com/vi/Fu3J9hHB_j8/0.jpg)](https://www.youtube.com/watch?v=Fu3J9hHB_j8)
